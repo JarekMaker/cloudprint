@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Print a document</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Print a document</h1>
+    <p class="printer">Printer: <strong id="printer">-</strong></p>
+
+    <label class="drop" id="drop" for="file">
+      <input id="file" type="file" accept=".pdf,.txt,.png,.jpg,.jpeg" hidden>
+      <span id="file-label">Tap to choose a file</span>
+      <small>PDF, TXT, PNG or JPG, up to 20 MB</small>
+    </label>
+
+    <button id="send" disabled>Print</button>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

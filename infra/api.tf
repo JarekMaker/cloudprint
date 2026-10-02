@@ -37,6 +37,11 @@ resource "aws_iam_role_policy" "lambda" {
       },
       {
         Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
+        Resource = aws_dynamodb_table.orders.arn
+      },
+      {
+        Effect   = "Allow"
         Action   = "iot:Publish"
         Resource = "arn:aws:iot:${var.region}:${data.aws_caller_identity.current.account_id}:topic/printers/*/jobs"
       },
@@ -64,6 +69,8 @@ resource "aws_lambda_function" "api" {
       API_KEY      = random_password.api_key.result
       PRINTERS     = join(",", sort(tolist(var.printers)))
       IOT_ENDPOINT = data.aws_iot_endpoint.data.endpoint_address
+      ORDERS_TABLE = aws_dynamodb_table.orders.name
+      KIOSK_TOKENS = jsonencode({ for id, p in random_password.kiosk : id => p.result })
     }
   }
 }
@@ -71,6 +78,12 @@ resource "aws_lambda_function" "api" {
 resource "aws_apigatewayv2_api" "http" {
   name          = "${var.project}-api"
   protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["GET", "POST"]
+    allow_headers = ["content-type"]
+  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
@@ -83,6 +96,18 @@ resource "aws_apigatewayv2_integration" "lambda" {
 resource "aws_apigatewayv2_route" "create_job" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "POST /jobs"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "create_order" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "POST /orders"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "read_order" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "GET /orders/{id}"
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 

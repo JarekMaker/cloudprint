@@ -25,6 +25,18 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "jobs" {
   }
 }
 
+# The kiosk page uploads straight from the browser with a presigned URL.
+resource "aws_s3_bucket_cors_configuration" "jobs" {
+  bucket = aws_s3_bucket.jobs.id
+
+  cors_rule {
+    allowed_methods = ["PUT"]
+    allowed_origins = ["*"]
+    allowed_headers = ["Content-Type"]
+    max_age_seconds = 3000
+  }
+}
+
 # Documents are sensitive and only needed until printed: delete after a day.
 resource "aws_s3_bucket_lifecycle_configuration" "jobs" {
   bucket = aws_s3_bucket.jobs.id

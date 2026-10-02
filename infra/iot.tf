@@ -44,6 +44,27 @@ resource "aws_iot_policy" "printer" {
   })
 }
 
+# Feeds printer status back into the order. The printer id is taken from the topic, not the payload,
+# so one printer cannot report on another printer's jobs.
+resource "aws_iot_topic_rule" "status" {
+  name        = "${replace(var.project, "-", "_")}_status"
+  enabled     = true
+  sql         = "SELECT job_id, state, detail, topic(2) AS printer_id FROM 'printers/+/status'"
+  sql_version = "2016-03-23"
+
+  lambda {
+    function_arn = aws_lambda_function.api.arn
+  }
+}
+
+resource "aws_lambda_permission" "iot" {
+  statement_id  = "AllowIotRule"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api.function_name
+  principal     = "iot.amazonaws.com"
+  source_arn    = aws_iot_topic_rule.status.arn
+}
+
 resource "aws_iot_policy_attachment" "printer" {
   for_each = var.printers
   policy   = aws_iot_policy.printer.name

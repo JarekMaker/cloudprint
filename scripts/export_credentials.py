@@ -45,6 +45,9 @@ def main() -> None:
     print(f"  CLOUDPRINT_API_KEY={outputs['api_key']['value']}")
     print("Agent environment:")
     print(f"  IOT_ENDPOINT={outputs['iot_endpoint']['value']}")
+    print("Kiosk page links (put your hosted web/ URL in front, then make a QR code):")
+    for printer_id, query in outputs["kiosk_queries"]["value"].items():
+        print(f"  {printer_id}: <PAGE_URL>/?{query}")
 
 
 if __name__ == "__main__":

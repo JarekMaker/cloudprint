@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# secrets: never commit
+certs/
+*.pem
+*.key
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+.env
+received/

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudprint"
+version = "0.1.0"
+description = "Send print jobs to any printer from anywhere via AWS IoT Core, with no local print server."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["paho-mqtt>=2.0", "requests>=2.31"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.scripts]
+cloudprint = "cloudprint.client:main"
+cloudprint-agent = "cloudprint.agent:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "functions"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

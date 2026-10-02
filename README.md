@@ -72,6 +72,21 @@ export CLOUDPRINT_API_KEY=...
 cloudprint invoice.pdf --printer office-1
 ```
 
+## Kiosk mode (QR code at the printer)
+
+A static page in `web/` lets anyone print without an account: scan the QR code on the printer,
+choose a file, watch the status.
+
+1. Set `window.CLOUDPRINT_API` in `web/config.js` to the `api_url` output.
+2. Host `web/` anywhere static (GitHub Pages: Settings, Pages, deploy from the `web` folder).
+3. `python scripts/export_credentials.py` prints one link per printer, like
+   `<PAGE_URL>/?p=office-1&t=<token>`. Turn each into a QR code and stick it on the printer.
+
+Every upload creates an order in DynamoDB that moves through
+`paid -> queued -> received -> printed | failed`. The file is only sent to the printer when the
+order is `paid`. Today orders are created as `paid` because there is no payment step; adding Stripe
+means creating them as `created` and flipping to `paid` from the payment webhook.
+
 ## Security model
 
 - Each printer has its own X.509 certificate. The IoT policy uses `${iot:Connection.Thing.ThingName}`,
@@ -80,7 +95,12 @@ cloudprint invoice.pdf --printer office-1
   limit. Files are written to a temp dir with a name it generates, never one from the message.
 - Bucket is private, encrypted and objects expire after one day. Presigned URLs are short-lived.
 - The Lambda role can only touch `jobs/*` and publish to `printers/*/jobs`.
-- Known limitation: one shared API key. Next step would be per-user auth (Cognito/JWT).
+- The public kiosk endpoint needs a per-printer token (carried by the QR link), is throttled, and
+  rejects unknown printers. The token only lets you order for that one printer.
+- Printer status is attributed using the MQTT topic, so a device cannot update another's orders.
+- Known limitation: the kiosk token is a shared secret printed on a sticker, and there is no
+  per-user rate limit yet. Payment would be the real abuse control.
+- Known limitation: one shared API key for the CLI. Next step would be per-user auth (Cognito/JWT).
 - Terraform state contains the device private keys, so use an encrypted remote backend for real use.
 
 ## Develop
@@ -93,6 +113,8 @@ ruff check . && pytest
 ## Roadmap
 
 - Cognito auth instead of a shared API key
-- DynamoDB job history and a `cloudprint status <job>` command
+- Stripe Checkout (test mode first) as the `created -> paid` step
+- Page counting and per-page pricing
+- Alert when a printer goes offline
 - Convert office documents to PDF before dispatch
 - ESP32 variant for printers with a raw socket
